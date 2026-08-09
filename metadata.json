@@ -1,0 +1,6 @@
+{
+  "name": "Doctor or Physician Portal",
+  "description": "Verification and authentication portal for doctors and physicians to submit full name, post, NPI number, medical council number, license number, speciality, hospital affiliation, and board certifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
