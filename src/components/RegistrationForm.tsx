@@ -13,15 +13,23 @@ import {
   ArrowRight,
   FileCheck,
   RotateCcw,
-  Bot
+  Bot,
+  Zap,
+  KeyRound,
+  Search
 } from 'lucide-react';
 import { DoctorProfile, BoardCertDocument } from '../types';
+import { initialDoctors } from '../data/sampleDoctors';
 
 interface RegistrationFormProps {
   onRegisterSuccess: (newDoctor: DoctorProfile) => void;
 }
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSuccess }) => {
+  // Auth Mode State: 'instant' or 'register'
+  const [authMode, setAuthMode] = useState<'instant' | 'register'>('instant');
+  const [instantSearch, setInstantSearch] = useState('');
+
   // Required fields from prompt
   const [fullName, setFullName] = useState('');
   const [post, setPost] = useState('');
@@ -271,7 +279,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6">
       {/* Title Header */}
-      <div className="mb-8 text-center sm:text-left flex flex-col sm:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-6">
+      <div className="mb-6 text-center sm:text-left flex flex-col sm:flex-row items-start justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200 mb-3">
             <Shield className="w-3.5 h-3.5" />
@@ -281,7 +289,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
             Doctor or Physician Portal
           </h1>
           <p className="text-sm text-slate-600 mt-1 max-w-2xl">
-            Submit official medical credentials, NPI number, medical council registration, license number, and board certifications for instant verification.
+            Instant Authentication or register official credentials, NPI number, medical council registration, license number, and board certifications for AI verification.
           </p>
         </div>
 
@@ -294,22 +302,31 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
           <div className="flex flex-wrap gap-1.5">
             <button
               type="button"
-              onClick={() => handleAutoFill('cardiology')}
-              className="text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-medium transition-colors shadow-xs"
+              onClick={() => {
+                setAuthMode('register');
+                handleAutoFill('cardiology');
+              }}
+              className="text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-medium transition-colors shadow-xs cursor-pointer"
             >
               Cardiologist
             </button>
             <button
               type="button"
-              onClick={() => handleAutoFill('neurology')}
-              className="text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-medium transition-colors shadow-xs"
+              onClick={() => {
+                setAuthMode('register');
+                handleAutoFill('neurology');
+              }}
+              className="text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-medium transition-colors shadow-xs cursor-pointer"
             >
               Neurosurgeon
             </button>
             <button
               type="button"
-              onClick={() => handleAutoFill('pediatrics')}
-              className="text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-medium transition-colors shadow-xs"
+              onClick={() => {
+                setAuthMode('register');
+                handleAutoFill('pediatrics');
+              }}
+              className="text-xs bg-white hover:bg-emerald-50 text-slate-800 hover:text-emerald-700 px-2.5 py-1.5 rounded-lg border border-slate-200 font-medium transition-colors shadow-xs cursor-pointer"
             >
               Pediatrician
             </button>
@@ -317,7 +334,152 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
         </div>
       </div>
 
-      {/* Main Form */}
+      {/* Auth Mode Toggle Bar */}
+      <div className="bg-slate-200 p-1.5 rounded-2xl mb-8 flex items-center gap-2 border border-slate-300">
+        <button
+          type="button"
+          onClick={() => setAuthMode('instant')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            authMode === 'instant'
+              ? 'bg-slate-900 text-white shadow-md'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Zap className="w-4 h-4 text-emerald-400" />
+          <span>1-Click Instant Doctor Login & Dashboard Access</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setAuthMode('register')}
+          className={`flex-1 py-3 px-4 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            authMode === 'register'
+              ? 'bg-emerald-700 text-white shadow-md'
+              : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>New Physician Verification & AI Audit Registration</span>
+        </button>
+      </div>
+
+      {/* MODE 1: INSTANT AUTHENTICATION & QUICK DOCTOR LOGIN */}
+      {authMode === 'instant' && (
+        <div className="space-y-6">
+          
+          {/* Quick Search and Banner */}
+          <div className="bg-slate-900 text-white p-6 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-emerald-400 font-mono text-xs uppercase tracking-wider font-bold block mb-1">
+                  Instant Authentication Gateway
+                </span>
+                <h2 className="text-xl font-bold tracking-tight text-white">
+                  Select a Verified Practitioner Profile for Instant Access
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  Experience full clinical EHR, consultations, e-prescriptions, and API widgets without manual registration delays.
+                </p>
+              </div>
+
+              {/* Live Search Input */}
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Filter by Name, NPI, or Specialty..."
+                  value={instantSearch}
+                  onChange={(e) => setInstantSearch(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-400 outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Grid of Verified Doctors for 1-Click Login */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {initialDoctors
+              .filter((doc) => {
+                if (!instantSearch.trim()) return true;
+                const q = instantSearch.toLowerCase();
+                return (
+                  doc.fullName.toLowerCase().includes(q) ||
+                  doc.npiNumber.includes(q) ||
+                  doc.speciality.toLowerCase().includes(q) ||
+                  doc.hospitalAffiliation.toLowerCase().includes(q)
+                );
+              })
+              .map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white rounded-2xl p-5 border border-slate-200 hover:border-emerald-500 transition-all shadow-xs hover:shadow-md flex flex-col justify-between space-y-4 group"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 mb-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          VERIFIED PRACTITIONER
+                        </span>
+                        <h3 className="font-bold text-slate-900 text-base group-hover:text-emerald-800 transition-colors">
+                          {doc.fullName}
+                        </h3>
+                        <p className="text-xs text-slate-600 font-medium">{doc.post}</p>
+                      </div>
+
+                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 shrink-0">
+                        NPI: {doc.npiNumber}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Specialty:</span>
+                        <strong className="text-slate-800">{doc.speciality}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Hospital Affiliation:</span>
+                        <strong className="text-slate-800 truncate block">{doc.hospitalAffiliation}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">License #:</span>
+                        <strong className="text-slate-800">{doc.licenseNumber}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 block">Badge ID:</span>
+                        <strong className="text-emerald-700 font-mono">{doc.verificationBadgeId}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => onRegisterSuccess(doc)}
+                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer group-hover:bg-emerald-700"
+                  >
+                    <Zap className="w-4 h-4 fill-current text-amber-300" />
+                    <span>Instant Login as {doc.fullName.split(',')[0]}</span>
+                    <ArrowRight className="w-4 h-4 ml-auto" />
+                  </button>
+                </div>
+              ))}
+          </div>
+
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-center text-xs text-slate-600">
+            <span>Need to register a custom medical license or upload a board certificate? </span>
+            <button
+              onClick={() => setAuthMode('register')}
+              className="text-emerald-700 font-bold underline hover:text-emerald-800 ml-1 cursor-pointer"
+            >
+              Switch to New Physician Registration Mode →
+            </button>
+          </div>
+
+        </div>
+      )}
+
+      {/* MODE 2: REGISTRATION FORM */}
+      {authMode === 'register' && (
       <form onSubmit={handleSubmit} className="space-y-8">
         
         {/* SECTION 1: Personal & Professional Identity */}
@@ -684,6 +846,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
         </div>
 
       </form>
+      )}
     </div>
   );
 };
