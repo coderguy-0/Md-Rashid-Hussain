@@ -16,7 +16,12 @@ import {
   Bot,
   Zap,
   KeyRound,
-  Search
+  Search,
+  Lock,
+  Eye,
+  EyeOff,
+  Key,
+  X
 } from 'lucide-react';
 import { DoctorProfile, BoardCertDocument } from '../types';
 import { initialDoctors } from '../data/sampleDoctors';
@@ -29,6 +34,16 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
   // Auth Mode State: 'instant' or 'register'
   const [authMode, setAuthMode] = useState<'instant' | 'register'>('instant');
   const [instantSearch, setInstantSearch] = useState('');
+
+  // Password Authentication Modal State for Instant Login
+  const [selectedDoctorForLogin, setSelectedDoctorForLogin] = useState<DoctorProfile | null>(null);
+  const [loginPasswordInput, setLoginPasswordInput] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // Security password state for registration
+  const [securityPassword, setSecurityPassword] = useState('');
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   // Required fields from prompt
   const [fullName, setFullName] = useState('');
@@ -76,6 +91,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
       setYearsOfPractice(18);
       setCertName('Diplomate Certification in Cardiovascular Disease');
       setIssuingBody('American Board of Internal Medicine (ABIM)');
+      setSecurityPassword('doc123');
       setUploadedFile({
         name: 'ABIM_Cardiology_Board_Cert_Sterling.pdf',
         size: '2.1 MB',
@@ -262,6 +278,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
         aiAuditSummary: vr?.summary || 'Credentials verified against medical registry and board standards.',
         mismatches: vr?.mismatches || [],
         securityHash: vr?.securityHash || 'sha256_mock_hash_' + Math.random().toString(36).substring(2, 10),
+        securityPassword: securityPassword || 'doc123',
         integrationToken: 'mat_live_' + Math.floor(1000 + Math.random() * 9000) + '_' + fullName.substring(0, 3).toLowerCase(),
         embeddedViewsCount: 0,
         lastVerifiedCheck: new Date().toISOString(),
@@ -273,6 +290,25 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
       alert('Verification submission error. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOpenLoginModal = (doc: DoctorProfile) => {
+    setSelectedDoctorForLogin(doc);
+    setLoginPasswordInput('');
+    setLoginError(null);
+    setShowLoginPassword(false);
+  };
+
+  const handleVerifyLoginPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDoctorForLogin) return;
+    const expectedPass = selectedDoctorForLogin.securityPassword || 'doc123';
+    if (loginPasswordInput.trim() === expectedPass) {
+      onRegisterSuccess(selectedDoctorForLogin);
+      setSelectedDoctorForLogin(null);
+    } else {
+      setLoginError('Incorrect Security Password / PIN. Access denied to preserve doctor data privacy.');
     }
   };
 
@@ -450,17 +486,40 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
                         <strong className="text-emerald-700 font-mono">{doc.verificationBadgeId}</strong>
                       </div>
                     </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 bg-emerald-50/50 px-3 py-1.5 rounded-lg border border-emerald-100">
+                      <span className="flex items-center gap-1 font-semibold text-emerald-800">
+                        <Lock className="w-3 h-3 text-emerald-600" /> Demo Password / PIN:
+                      </span>
+                      <span className="font-mono text-xs font-bold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
+                        {doc.securityPassword || 'doc123'}
+                      </span>
+                    </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => onRegisterSuccess(doc)}
-                    className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer group-hover:bg-emerald-700"
-                  >
-                    <Zap className="w-4 h-4 fill-current text-amber-300" />
-                    <span>Instant Login as {doc.fullName.split(',')[0]}</span>
-                    <ArrowRight className="w-4 h-4 ml-auto" />
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    {/* Primary 1-Click Direct Login Button (No Password required) */}
+                    <button
+                      type="button"
+                      onClick={() => onRegisterSuccess(doc)}
+                      className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Direct 1-click login into physician dashboard"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Instant 1-Click Login</span>
+                    </button>
+
+                    {/* Secondary PIN Login Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLoginModal(doc)}
+                      className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-all border border-slate-300 flex items-center justify-center gap-1.5 cursor-pointer"
+                      title="Login with security PIN"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-slate-600" />
+                      <span>Enter PIN</span>
+                    </button>
+                  </div>
                 </div>
               ))}
           </div>
@@ -595,6 +654,39 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
               />
+            </div>
+
+            {/* Doctor Security Password / PIN */}
+            <div className="sm:col-span-2 bg-slate-900 text-white p-5 rounded-2xl border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <Lock className="w-4 h-4 text-emerald-400" />
+                  <span>Create Security Password / Access PIN</span>
+                  <span className="text-rose-400">*</span>
+                </label>
+                <span className="text-[10px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">HIPAA Data Protection</span>
+              </div>
+              <p className="text-xs text-slate-300">
+                This password protects your private clinical EHR workspace, patient consultation history, e-prescriptions, and audit logs.
+              </p>
+              <div className="relative">
+                <input
+                  type={showRegisterPassword ? 'text' : 'password'}
+                  required
+                  placeholder="Create a strong password or security PIN (e.g. doc123)"
+                  value={securityPassword}
+                  onChange={(e) => setSecurityPassword(e.target.value)}
+                  className="w-full bg-slate-800 text-white border border-slate-700 rounded-xl pl-10 pr-12 py-2.5 text-sm outline-none focus:border-emerald-500 font-mono"
+                />
+                <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <button
+                  type="button"
+                  onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                  className="absolute right-3.5 top-2.5 text-slate-400 hover:text-white text-xs px-1.5 py-1 rounded cursor-pointer"
+                >
+                  {showRegisterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -846,6 +938,133 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({ onRegisterSu
         </div>
 
       </form>
+      )}
+
+      {/* PASSWORD AUTHENTICATION MODAL FOR INSTANT DOCTOR LOGIN */}
+      {selectedDoctorForLogin && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full border border-slate-200 shadow-2xl p-6 space-y-6 relative">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-slate-900 text-emerald-400 rounded-2xl border border-slate-800 shrink-0">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase tracking-wider block mb-1">
+                    Doctor Security & Privacy Gate
+                  </span>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Authenticate Doctor Session
+                  </h3>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedDoctorForLogin(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Doctor Identity Card */}
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-slate-900 text-sm">{selectedDoctorForLogin.fullName}</h4>
+                <span className="text-xs font-mono font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                  NPI: {selectedDoctorForLogin.npiNumber}
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 font-medium">{selectedDoctorForLogin.post}</p>
+              <div className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 flex items-center justify-between">
+                <span>{selectedDoctorForLogin.speciality}</span>
+                <span className="text-emerald-700 font-bold">{selectedDoctorForLogin.hospitalAffiliation}</span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleVerifyLoginPassword} className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                    <Key className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Enter Security Password / PIN</span>
+                  </label>
+
+                  {/* Demo Password Hint Pill */}
+                  <button
+                    type="button"
+                    onClick={() => setLoginPasswordInput(selectedDoctorForLogin.securityPassword || 'doc123')}
+                    className="text-[10px] font-mono bg-emerald-50 text-emerald-800 hover:bg-emerald-100 px-2 py-0.5 rounded border border-emerald-200 transition-colors cursor-pointer flex items-center gap-1"
+                    title="Click to fill demo password"
+                  >
+                    <span>Demo PIN: <strong>{selectedDoctorForLogin.securityPassword || 'doc123'}</strong></span>
+                    <span className="text-[9px] underline">(Fill)</span>
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    required
+                    autoFocus
+                    placeholder="Enter security password or PIN"
+                    value={loginPasswordInput}
+                    onChange={(e) => setLoginPasswordInput(e.target.value)}
+                    className="w-full bg-white border border-slate-300 focus:border-emerald-500 rounded-xl pl-3.5 pr-12 py-3 text-sm outline-none focus:ring-2 focus:ring-emerald-500/20 font-mono text-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3.5 top-3 text-slate-400 hover:text-slate-700 cursor-pointer text-xs"
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {loginError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDoctorForLogin(null)}
+                  className="w-full sm:w-auto px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onRegisterSuccess(selectedDoctorForLogin);
+                    setSelectedDoctorForLogin(null);
+                  }}
+                  className="w-full sm:flex-1 py-3 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  title="Skip password check and log in directly"
+                >
+                  <Zap className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Bypass PIN & Login</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="w-full sm:flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Unlock Workspace</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

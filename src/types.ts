@@ -35,7 +35,8 @@ export interface DoctorProfile {
   mismatches?: string[];
   securityHash?: string;
   
-  // Integration Details
+  // Integration Details & Security
+  securityPassword?: string; // Private Doctor Access Password
   integrationToken: string;
   embeddedViewsCount: number;
   lastVerifiedCheck?: string;

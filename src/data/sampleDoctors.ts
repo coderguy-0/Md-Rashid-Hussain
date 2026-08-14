@@ -42,6 +42,7 @@ export const initialDoctors: DoctorProfile[] = [
     aiAuditSummary: 'All credentials validated against NPI Registry and ABIM Board Verification API. License CA-MD-902184 active with 0 adverse regulatory actions.',
     mismatches: [],
     securityHash: 'e9a4f210b39c08d172e51920acbd3211f8e4c01',
+    securityPassword: 'chen123',
     integrationToken: 'mat_live_9921_chen_JHMC_782',
     embeddedViewsCount: 1420,
     lastVerifiedCheck: '2026-08-06T14:22:00Z'
@@ -77,6 +78,7 @@ export const initialDoctors: DoctorProfile[] = [
     aiAuditSummary: 'NPI 1470293811 matched with State License NY-MD-440192. Official board record confirmed active standing.',
     mismatches: [],
     securityHash: '8b3c9d1a702e881023c4a77021e90211a30f199',
+    securityPassword: 'harrison123',
     integrationToken: 'mat_live_4419_harr_MTS_901',
     embeddedViewsCount: 890,
     lastVerifiedCheck: '2026-08-05T11:00:00Z'
@@ -112,6 +114,7 @@ export const initialDoctors: DoctorProfile[] = [
     aiAuditSummary: 'NPI 1628109344 verified. Pediatric Specialty credentials matched with Texas Medical Board registry.',
     mismatches: [],
     securityHash: '1a9f023c8810d29e771c990a881d39021e1022f',
+    securityPassword: 'sharma123',
     integrationToken: 'mat_live_6520_shar_TCH_102',
     embeddedViewsCount: 2310,
     lastVerifiedCheck: '2026-08-07T08:10:00Z'
@@ -147,6 +150,7 @@ export const initialDoctors: DoctorProfile[] = [
     aiAuditSummary: 'Hospital affiliation name on certification reads "Mayo Clinic Florida" vs submitted "Mayo Clinic Regional Health System". AI flagged for minor name variation review.',
     mismatches: ['Affiliation wording discrepancy (Mayo Clinic Florida vs Mayo Clinic Regional Health System)'],
     securityHash: '72c1092a110d882910c0129f123011a091022a1',
+    securityPassword: 'vance123',
     integrationToken: 'mat_live_1182_vanc_MAYO_410',
     embeddedViewsCount: 120,
     lastVerifiedCheck: '2026-08-06T11:20:00Z'

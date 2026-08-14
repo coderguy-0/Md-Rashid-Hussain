@@ -2,18 +2,13 @@ import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { RegistrationForm } from './components/RegistrationForm';
 import { ProfessionalDashboard } from './components/ProfessionalDashboard';
-import { LocalProofSuite } from './components/LocalProofSuite';
 import { initialDoctors } from './data/sampleDoctors';
 import { DoctorProfile } from './types';
-import { ShieldCheck, Cpu, Globe, Github } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export default function App() {
   const [doctors, setDoctors] = useState<DoctorProfile[]>(initialDoctors);
   const [verifiedDoctor, setVerifiedDoctor] = useState<DoctorProfile | null>(null);
-
-  // Local Proof & Deployment Modal state
-  const [proofModalOpen, setProofModalOpen] = useState(false);
-  const [proofModalTab, setProofModalTab] = useState<'prove' | 'deploy'>('prove');
 
   // Handle new registration or instant authentication success
   const handleRegisterSuccess = (doc: DoctorProfile) => {
@@ -24,16 +19,6 @@ export default function App() {
     setVerifiedDoctor(doc);
   };
 
-  const handleOpenProve = () => {
-    setProofModalTab('prove');
-    setProofModalOpen(true);
-  };
-
-  const handleOpenDeploy = () => {
-    setProofModalTab('deploy');
-    setProofModalOpen(true);
-  };
-
   const verifiedCount = doctors.filter((d) => d.status === 'VERIFIED').length;
 
   return (
@@ -41,8 +26,10 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar 
         verifiedCount={verifiedCount} 
-        onOpenProveLocally={handleOpenProve}
-        onOpenDeploy={handleOpenDeploy}
+        activeDoctor={verifiedDoctor}
+        allDoctors={doctors}
+        onLogout={() => setVerifiedDoctor(null)}
+        onSelectDoctor={(doc) => setVerifiedDoctor(doc)}
       />
 
       {/* Main Content Area */}
@@ -68,34 +55,12 @@ export default function App() {
               <span>Credentials Authentication Gateway</span>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleOpenProve}
-                className="text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <Cpu className="w-3.5 h-3.5" />
-                <span>Prove Me Locally</span>
-              </button>
-              <span className="text-slate-700">•</span>
-              <button
-                onClick={handleOpenDeploy}
-                className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 cursor-pointer"
-              >
-                <Github className="w-3.5 h-3.5" />
-                <span>Deploy (GitHub & Netlify)</span>
-              </button>
-            </div>
+            <p className="text-slate-500">
+              Official NPI, Medical Council & License Verification System.
+            </p>
           </div>
         </footer>
       )}
-
-      {/* Local Proof & Deployment Suite Modal */}
-      <LocalProofSuite
-        doctor={verifiedDoctor || doctors[0]}
-        isOpen={proofModalOpen}
-        onClose={() => setProofModalOpen(false)}
-        defaultTab={proofModalTab}
-      />
     </div>
   );
 }

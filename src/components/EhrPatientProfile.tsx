@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   PatientRecord, 
   DoctorProfile 
 } from '../types';
 import { 
   User, 
+  Users,
   Activity, 
   AlertTriangle, 
   FileText, 
@@ -27,12 +28,21 @@ import {
   FileCheck2,
   Syringe,
   Building2,
-  Check
+  Check,
+  Edit3,
+  Search,
+  UserPlus,
+  SlidersHorizontal,
+  RotateCcw
 } from 'lucide-react';
 
 interface EhrPatientProfileProps {
   patient: PatientRecord;
   doctor: DoctorProfile;
+  allPatients?: PatientRecord[];
+  onSelectPatient?: (patient: PatientRecord) => void;
+  onUpdatePatient?: (updatedPatient: PatientRecord) => void;
+  onAddPatient?: (newPatient: PatientRecord) => void;
   onStartConsultation: (patient: PatientRecord) => void;
   onOpenPrescription: (patient: PatientRecord) => void;
 }
@@ -40,10 +50,111 @@ interface EhrPatientProfileProps {
 export const EhrPatientProfile: React.FC<EhrPatientProfileProps> = ({
   patient,
   doctor,
+  allPatients,
+  onSelectPatient,
+  onUpdatePatient,
+  onAddPatient,
   onStartConsultation,
   onOpenPrescription,
 }) => {
   const [activeTab, setActiveTab] = useState<string>('Overview');
+
+  // Manual Patient Editor State
+  const [customName, setCustomName] = useState<string>(patient.fullName);
+  const [customAge, setCustomAge] = useState<number | string>(patient.age);
+  const [customGender, setCustomGender] = useState<string>(patient.gender);
+  const [customBloodGroup, setCustomBloodGroup] = useState<string>(patient.bloodGroup || 'A+');
+  const [customCondition, setCustomCondition] = useState<string>(patient.condition || 'General Health');
+  
+  const [isManualEditOpen, setIsManualEditOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [genderFilter, setGenderFilter] = useState<string>('All');
+
+  // Synchronize local form when active patient changes
+  useEffect(() => {
+    setCustomName(patient.fullName);
+    setCustomAge(patient.age);
+    setCustomGender(patient.gender);
+    setCustomBloodGroup(patient.bloodGroup || 'A+');
+    setCustomCondition(patient.condition || 'General Health');
+  }, [patient.id, patient.fullName, patient.age, patient.gender, patient.bloodGroup, patient.condition]);
+
+  // Handlers for manual profile updates
+  const handleApplyUpdates = () => {
+    const updated: PatientRecord = {
+      ...patient,
+      fullName: customName.trim() || patient.fullName,
+      age: Number(customAge) || patient.age,
+      gender: customGender || patient.gender,
+      bloodGroup: customBloodGroup || patient.bloodGroup,
+      condition: customCondition || patient.condition,
+    };
+    if (onUpdatePatient) {
+      onUpdatePatient(updated);
+    }
+  };
+
+  const handleCreateNewPatient = () => {
+    const newId = `PAT-${Date.now().toString().slice(-4)}`;
+    const newMrn = `MRN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const calculatedBirthYear = 2026 - (Number(customAge) || 30);
+    
+    const newPat: PatientRecord = {
+      id: newId,
+      mrn: newMrn,
+      fullName: customName.trim() || 'New Patient',
+      age: Number(customAge) || 30,
+      gender: customGender || 'Male',
+      dob: `${calculatedBirthYear}-01-15`,
+      bloodGroup: customBloodGroup || 'O+',
+      phone: '+1 (555) ' + Math.floor(100 + Math.random() * 900) + '-' + Math.floor(1000 + Math.random() * 9000),
+      email: `${(customName || 'patient').toLowerCase().replace(/\s+/g, '.')}@clinic.org`,
+      allergies: ['None Reported'],
+      emergencyContact: {
+        name: 'Primary Contact',
+        relation: 'Family',
+        phone: '+1 (555) 999-0000',
+      },
+      importantAlerts: ['New Patient Profile'],
+      medicalHistory: ['No prior chronic illness declared'],
+      currentMedications: [],
+      diagnosesHistory: [
+        {
+          code: 'Z00.00',
+          condition: customCondition || 'General Medical Examination',
+          diagnosedDate: '2026-08-09',
+          status: 'Active'
+        }
+      ],
+      condition: customCondition || 'Routine Examination',
+      lastVisit: 'Today',
+      status: 'Active',
+      vitalsHistory: [
+        { date: '2026-08-09', bp: '120/80', hr: 72, temp: 98.6, spo2: 98, rr: 16, weight: 70, height: 175, bmi: 22.9 }
+      ],
+      labReports: [],
+      consultationHistory: []
+    };
+
+    if (onAddPatient) {
+      onAddPatient(newPat);
+    } else if (onSelectPatient) {
+      onSelectPatient(newPat);
+    }
+  };
+
+  // Filter patients by name, age/year, or gender
+  const filteredPatientsList = (allPatients || []).filter((p) => {
+    const query = searchQuery.toLowerCase().trim();
+    const matchesQuery = !query || 
+      p.fullName.toLowerCase().includes(query) ||
+      p.mrn.toLowerCase().includes(query) ||
+      p.age.toString().includes(query) ||
+      p.dob.includes(query);
+
+    const matchesGender = genderFilter === 'All' || p.gender.toLowerCase() === genderFilter.toLowerCase();
+    return matchesQuery && matchesGender;
+  });
 
   // All 17 Tabs as specified in user guidelines
   const tabs = [
@@ -69,6 +180,240 @@ export const EhrPatientProfile: React.FC<EhrPatientProfileProps> = ({
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden font-sans">
       
+      {/* ================= ACTIVE PATIENT SWITCHER & MANUAL SELECTOR BAR ================= */}
+      <div className="bg-slate-950 text-white p-4 border-b border-slate-800 space-y-4 text-xs">
+        
+        {/* Top Header Controls */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <span className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30 shrink-0">
+              <Users className="w-4 h-4" />
+            </span>
+            <div>
+              <span className="font-bold text-white text-xs block">Active EHR Patient Switcher & Profile Selector</span>
+              <span className="text-[11px] text-slate-400">Select existing records or manually set Name, Age/Year, and Gender below</span>
+            </div>
+          </div>
+
+          {/* Toggle Manual Patient Editor */}
+          <button
+            onClick={() => setIsManualEditOpen(!isManualEditOpen)}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border ${
+              isManualEditOpen
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-sm'
+                : 'bg-slate-800 hover:bg-slate-700 text-emerald-300 border-emerald-500/50'
+            }`}
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+            <span>{isManualEditOpen ? 'Close Manual Patient Editor' : 'Manually Select / Edit Patient Details'}</span>
+          </button>
+        </div>
+
+        {/* Dropdown & Filter Row */}
+        {allPatients && allPatients.length > 0 && onSelectPatient && (
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center bg-slate-900/90 p-3 rounded-xl border border-slate-800">
+            
+            {/* Quick Search Input (Name / MRN / Age) */}
+            <div className="md:col-span-4 relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+              <input
+                type="text"
+                placeholder="Search Name, MRN or Year/Age..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+            </div>
+
+            {/* Gender Filter */}
+            <div className="md:col-span-3 flex items-center gap-1">
+              <label className="text-[10px] text-slate-400 font-semibold shrink-0 uppercase tracking-wider">Gender:</label>
+              <select
+                value={genderFilter}
+                onChange={(e) => setGenderFilter(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700 text-slate-200 font-semibold px-2.5 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+              >
+                <option value="All">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            {/* Select Patient Dropdown */}
+            <div className="md:col-span-5 flex items-center gap-1.5">
+              <label className="text-[10px] text-slate-400 font-semibold shrink-0 uppercase tracking-wider">Patient:</label>
+              <select
+                value={patient.id}
+                onChange={(e) => {
+                  const selected = allPatients.find((p) => p.id === e.target.value);
+                  if (selected) onSelectPatient(selected);
+                }}
+                className="w-full bg-slate-950 border border-emerald-500/70 text-emerald-300 font-bold px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+              >
+                {filteredPatientsList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.fullName} • {p.age} Yrs ({p.gender}) • {p.mrn}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Quick Pill Switcher Bar */}
+            <div className="md:col-span-12 flex items-center gap-1.5 overflow-x-auto pt-1">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mr-1">Quick Select:</span>
+              {filteredPatientsList.map((p) => {
+                const isCurrent = p.id === patient.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => onSelectPatient(p)}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                      isCurrent
+                        ? 'bg-emerald-600 text-white shadow-xs border border-emerald-400/40'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'
+                    }`}
+                  >
+                    <span>{p.fullName}</span>
+                    <span className="text-[10px] opacity-75">({p.age}y/{p.gender[0]})</span>
+                  </button>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
+
+        {/* ================= MANUAL PATIENT DETAILS INPUT / EDITOR PANEL ================= */}
+        {isManualEditOpen && (
+          <div className="bg-slate-900 p-4 rounded-xl border border-amber-500/40 space-y-3.5 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h4 className="font-bold text-amber-400 text-xs flex items-center gap-2">
+                <Edit3 className="w-4 h-4 text-amber-400" />
+                Manual Patient Parameters Editor (Name, Age/Year, Gender)
+              </h4>
+              <span className="text-[10px] text-slate-400">
+                Type details to customize the active EHR profile or generate a new patient record.
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              {/* Name Input */}
+              <div className="space-y-1 lg:col-span-2">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">
+                  Patient Full Name
+                </label>
+                <input
+                  type="text"
+                  value={customName}
+                  onChange={(e) => setCustomName(e.target.value)}
+                  placeholder="e.g. Eleanor Vance"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 font-medium focus:ring-2 focus:ring-amber-400 outline-none"
+                />
+              </div>
+
+              {/* Age / Year Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">
+                  Age (Years) / Year
+                </label>
+                <input
+                  type="number"
+                  value={customAge}
+                  onChange={(e) => setCustomAge(e.target.value)}
+                  placeholder="e.g. 58"
+                  min="0"
+                  max="120"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-emerald-300 font-bold focus:ring-2 focus:ring-amber-400 outline-none font-mono"
+                />
+              </div>
+
+              {/* Gender Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">
+                  Gender
+                </label>
+                <select
+                  value={customGender}
+                  onChange={(e) => setCustomGender(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                >
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Non-Binary">Non-Binary</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              {/* Blood Group Input */}
+              <div className="space-y-1">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">
+                  Blood Group
+                </label>
+                <select
+                  value={customBloodGroup}
+                  onChange={(e) => setCustomBloodGroup(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 text-emerald-400 font-bold px-3 py-1.5 rounded-xl text-xs outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                >
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+
+              {/* Primary Condition */}
+              <div className="space-y-1 sm:col-span-2 lg:col-span-5">
+                <label className="text-[10px] text-slate-300 font-bold uppercase tracking-wider block">
+                  Primary Medical Condition / Diagnosis
+                </label>
+                <input
+                  type="text"
+                  value={customCondition}
+                  onChange={(e) => setCustomCondition(e.target.value)}
+                  placeholder="e.g. Hypertension & Type 2 Diabetes"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white placeholder-slate-500 font-medium focus:ring-2 focus:ring-amber-400 outline-none"
+                />
+              </div>
+
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-800">
+              <span className="text-[11px] text-slate-400 italic">
+                Active Record MRN: <strong className="text-emerald-400 font-mono">{patient.mrn}</strong>
+              </span>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleApplyUpdates}
+                  className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Update Current Patient Profile</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCreateNewPatient}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Create as New Patient Record</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
       {/* ================= PATIENT HEADER ================= */}
       <div className="bg-slate-900 text-white p-6 border-b border-slate-800">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">

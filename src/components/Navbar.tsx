@@ -1,16 +1,21 @@
 import React from 'react';
-import { ShieldCheck, UserCheck, Cpu, Globe, Github } from 'lucide-react';
+import { ShieldCheck, UserCheck, LogOut, User, Users } from 'lucide-react';
+import { DoctorProfile } from '../types';
 
 interface NavbarProps {
   verifiedCount?: number;
-  onOpenProveLocally?: () => void;
-  onOpenDeploy?: () => void;
+  activeDoctor?: DoctorProfile | null;
+  allDoctors?: DoctorProfile[];
+  onLogout?: () => void;
+  onSelectDoctor?: (doctor: DoctorProfile) => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ 
   verifiedCount = 0,
-  onOpenProveLocally,
-  onOpenDeploy,
+  activeDoctor,
+  allDoctors = [],
+  onLogout,
+  onSelectDoctor,
 }) => {
   return (
     <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
@@ -22,25 +27,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span>Official Medical Licensing Council & NPI Registry Verification</span>
         </div>
         <div className="flex items-center gap-3 text-slate-400">
-          {onOpenProveLocally && (
-            <button
-              onClick={onOpenProveLocally}
-              className="text-emerald-300 hover:text-white font-bold flex items-center gap-1 cursor-pointer bg-emerald-950/80 hover:bg-emerald-900 px-2.5 py-0.5 rounded border border-emerald-700/80 transition-colors"
-            >
-              <Cpu className="w-3 h-3 text-emerald-400" />
-              <span>Prove Me Locally</span>
-            </button>
-          )}
-          {onOpenDeploy && (
-            <button
-              onClick={onOpenDeploy}
-              className="text-blue-300 hover:text-white font-bold flex items-center gap-1 cursor-pointer bg-blue-950/80 hover:bg-blue-900 px-2.5 py-0.5 rounded border border-blue-700/80 transition-colors"
-            >
-              <Globe className="w-3 h-3 text-blue-400" />
-              <span>Deploy to GitHub & Netlify</span>
-            </button>
-          )}
-          <div className="flex items-center gap-1.5 pl-2 border-l border-slate-800">
+          <div className="flex items-center gap-1.5">
             <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span><strong className="text-white">{verifiedCount}</strong> Active Verified Credentials</span>
           </div>
@@ -68,32 +55,60 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {onOpenProveLocally && (
-              <button
-                onClick={onOpenProveLocally}
-                className="bg-emerald-800 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer border border-emerald-600"
-              >
-                <Cpu className="w-4 h-4 text-emerald-300" />
-                <span className="hidden md:inline">Prove Me Locally</span>
-              </button>
+          <div className="flex items-center gap-3">
+            {activeDoctor ? (
+              <div className="flex items-center gap-2 bg-slate-800 p-1.5 rounded-2xl border border-slate-700">
+                <div className="px-2.5 py-1 bg-emerald-950/80 border border-emerald-500/40 rounded-xl text-xs flex items-center gap-2">
+                  <div className="p-1 bg-emerald-500 text-slate-950 rounded-lg">
+                    <User className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-white block text-xs leading-tight">{activeDoctor.fullName}</span>
+                    <span className="text-[10px] text-emerald-400 font-mono">NPI: {activeDoctor.npiNumber}</span>
+                  </div>
+                </div>
+
+                {/* Doctor Switcher Dropdown */}
+                {allDoctors.length > 1 && onSelectDoctor && (
+                  <select
+                    value={activeDoctor.id}
+                    onChange={(e) => {
+                      const doc = allDoctors.find((d) => d.id === e.target.value);
+                      if (doc) onSelectDoctor(doc);
+                    }}
+                    className="bg-slate-900 text-emerald-300 font-bold border border-slate-700 rounded-xl px-2 py-1.5 text-xs outline-none cursor-pointer hover:border-emerald-500"
+                    title="Switch doctor profile"
+                  >
+                    {allDoctors.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        Switch: {d.fullName.split(',')[0]}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {onLogout && (
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer border border-rose-500/30 flex items-center gap-1.5"
+                    title="Log out of active doctor session"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <span className="bg-emerald-900/60 text-emerald-300 px-3 py-1 rounded-lg text-xs font-mono border border-emerald-700/50 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                VERIFICATION ONLINE
+              </span>
             )}
-            {onOpenDeploy && (
-              <button
-                onClick={onOpenDeploy}
-                className="bg-blue-900 hover:bg-blue-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer border border-blue-700"
-              >
-                <Github className="w-4 h-4 text-blue-300" />
-                <span className="hidden md:inline">Deploy (GitHub & Netlify)</span>
-              </button>
-            )}
-            <span className="bg-emerald-900/60 text-emerald-300 px-3 py-1 rounded-lg text-xs font-mono border border-emerald-700/50 hidden lg:flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              VERIFICATION ONLINE
-            </span>
           </div>
         </div>
       </div>
     </header>
   );
 };
+

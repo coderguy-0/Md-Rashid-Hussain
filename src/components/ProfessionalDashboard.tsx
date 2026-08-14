@@ -65,7 +65,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
   onNewSubmission,
 }) => {
   // Navigation State
-  const [activeMenu, setActiveMenu] = useState<string>('Dashboard');
+  const [activeMenu, setActiveMenu] = useState<string>('Patients & Appointments');
 
   // Domain States
   const [patientsList, setPatientsList] = useState<PatientRecord[]>(samplePatients);
@@ -80,6 +80,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [patientFilter, setPatientFilter] = useState<'All' | 'New' | 'Active' | 'Follow-up' | 'High-Priority'>('All');
   const [aptFilter, setAptFilter] = useState<'All' | 'Today' | 'Upcoming' | 'In-Person' | 'Telemedicine'>('Today');
+  const [patientsAndAptTab, setPatientsAndAptTab] = useState<'unified' | 'appointments' | 'patients'>('unified');
 
   // Copy Feedback Flags
   const [copiedBadge, setCopiedBadge] = useState(false);
@@ -153,9 +154,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
 
   // Recommended Sidebar Structure from Prompt
   const menuItems = [
-    { name: 'Dashboard', icon: LayoutDashboard },
-    { name: 'Appointments', icon: Clock, badge: '4 Today' },
-    { name: 'Patients', icon: Users, badge: `${patientsList.length} Total` },
+    { name: 'Patients & Appointments', icon: Users, badge: `${patientsList.length} Patients` },
     { name: 'Patient Profile (EHR)', icon: FileText, highlight: true },
     { name: 'Clinical Consultation', icon: Stethoscope },
     { name: 'e-Prescriptions', icon: Pill },
@@ -164,11 +163,10 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
     { name: 'Referrals', icon: Share2 },
     { name: 'Messages & Comm', icon: MessageSquare },
     { name: 'Telemedicine Suite', icon: Video, badge: 'Live' },
-    { name: 'My Clinics & Hospital', icon: Building2 },
+    { name: 'Professional Profile', icon: ShieldCheck, highlight: true },
     { name: 'Billing & Earnings', icon: CreditCard },
     { name: 'AI Clinical Assistant', icon: Bot },
     { name: 'Schedule & Availability', icon: Calendar },
-    { name: 'Profile & Verification', icon: ShieldCheck, highlight: true },
     { name: 'Notifications', icon: Bell, badge: '2' },
     { name: 'Security & Audit Logs', icon: Lock },
     { name: 'Settings', icon: Settings },
@@ -237,13 +235,19 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="p-3 border-t border-slate-200/80 bg-slate-50/80 flex items-center justify-between text-[11px] text-slate-500">
-          <span className="truncate font-mono">Token: {doctor.integrationToken.substring(0, 10)}...</span>
+        <div className="p-3 border-t border-slate-200/80 bg-slate-50/80 space-y-2 text-[11px] text-slate-500">
+          <div className="flex items-center justify-between text-[10px]">
+            <span className="truncate font-mono">Token: {doctor.integrationToken.substring(0, 8)}...</span>
+            <span className="text-emerald-700 font-bold flex items-center gap-1">
+              <Lock className="w-3 h-3 text-emerald-600" /> Private EHR
+            </span>
+          </div>
           <button
             onClick={onNewSubmission}
-            className="text-emerald-700 hover:text-emerald-800 font-bold underline cursor-pointer text-[10px]"
+            className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
           >
-            + New Auth
+            <LogOut className="w-3.5 h-3.5 text-rose-400" />
+            <span>Lock & Switch Doctor</span>
           </button>
         </div>
       </aside>
@@ -289,6 +293,16 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
               <ShieldCheck className="w-4 h-4" />
               <span>Badge ID: {doctor.verificationBadgeId}</span>
             </button>
+
+            {/* Lock Session & Sign Out Button */}
+            <button
+              onClick={onNewSubmission}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs border border-slate-700"
+              title="Lock private EHR session and return to Doctor Gateway"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Lock Session</span>
+            </button>
           </div>
         </div>
 
@@ -301,7 +315,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
             doctor={doctor}
             onCompleteConsultation={(summary) => {
               setShowConsultationWorkspace(false);
-              setActiveMenu('Dashboard');
+              setActiveMenu('Patients & Appointments');
             }}
             onCancel={() => setShowConsultationWorkspace(false)}
           />
@@ -316,9 +330,9 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
         )}
 
         {/* ========================================================= */}
-        {/* VIEW 1: DASHBOARD                                         */}
+        {/* COMBINED PATIENTS & APPOINTMENTS HUB                      */}
         {/* ========================================================= */}
-        {!showConsultationWorkspace && activeMenu === 'Dashboard' && (
+        {!showConsultationWorkspace && activeMenu === 'Patients & Appointments' && (
           <div className="space-y-6">
             
             {/* Authenticated Physician Success Banner */}
@@ -329,7 +343,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">Good Day, {doctor.fullName}</h4>
-                  <p className="text-slate-600 text-[11px]">8 Today's Patients | 3 Waiting | 2 Reports to Review | 4 Prescriptions Pending</p>
+                  <p className="text-slate-600 text-[11px]">{appointmentsList.length} Scheduled Appointments | {patientsList.length} Registered Patients | 2 Reports to Review</p>
                 </div>
               </div>
 
@@ -349,11 +363,20 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
               
               <div className="bg-white p-5 rounded-2xl border border-slate-200/90 space-y-1 shadow-xs hover:shadow-md transition-all">
                 <div className="flex items-center justify-between text-slate-500 text-xs">
-                  <span className="font-medium">Today's Patients</span>
+                  <span className="font-medium">Scheduled Appointments</span>
+                  <Clock className="w-4 h-4 text-emerald-600" />
+                </div>
+                <p className="text-2xl font-bold text-slate-900">{appointmentsList.length} Appointments</p>
+                <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">Today & Upcoming Queue</p>
+              </div>
+
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 space-y-1 shadow-xs hover:shadow-md transition-all">
+                <div className="flex items-center justify-between text-slate-500 text-xs">
+                  <span className="font-medium">Registered Patients</span>
                   <Users className="w-4 h-4 text-emerald-600" />
                 </div>
-                <p className="text-2xl font-bold text-slate-900">8 Patients</p>
-                <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1">3 Waiting in Lounge</p>
+                <p className="text-2xl font-bold text-slate-900">{patientsList.length} Patients</p>
+                <p className="text-[11px] text-emerald-700 font-semibold">Active EHR Records</p>
               </div>
 
               <div className="bg-white p-5 rounded-2xl border border-slate-200/90 space-y-1 shadow-xs hover:shadow-md transition-all">
@@ -374,55 +397,264 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
                 <p className="text-[11px] text-indigo-700 font-semibold">Awaiting Digital Sign</p>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/90 space-y-1 shadow-xs hover:shadow-md transition-all">
-                <div className="flex items-center justify-between text-slate-500 text-xs">
-                  <span className="font-medium">Referrals & Requests</span>
-                  <Share2 className="w-4 h-4 text-teal-600" />
-                </div>
-                <p className="text-2xl font-bold text-slate-900">2 Referrals</p>
-                <p className="text-[11px] text-slate-500">1 Electrophysiology Active</p>
-              </div>
-
             </div>
 
-            {/* Today's Appointments Stream */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
-              <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
-                  <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-emerald-600" />
-                    Today's Consultations (Ascending Schedule)
-                  </h3>
-                  <button 
-                    onClick={() => setActiveMenu('Appointments')}
-                    className="text-xs text-emerald-700 hover:underline font-semibold"
-                  >
-                    View All Appointments
-                  </button>
+            {/* UNIFIED PATIENTS & APPOINTMENTS CONTAINER */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-6 text-xs shadow-xs">
+              {/* Header & View Switcher */}
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-emerald-50 text-emerald-800 text-xs px-2.5 py-0.5 rounded-md font-bold border border-emerald-200 flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-emerald-600" /> Unified Clinical Workspace
+                    </span>
+                  </div>
+                  <h2 className="text-lg font-bold text-slate-900">Patients & Appointments Hub</h2>
+                  <p className="text-slate-500">Manage patient records, medical histories, and scheduled consultations in one unified location.</p>
+                </div>
+
+              {/* Sub-Tab Selector */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shrink-0">
+                <button
+                  onClick={() => setPatientsAndAptTab('unified')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    patientsAndAptTab === 'unified' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Unified Side-by-Side</span>
+                </button>
+
+                <button
+                  onClick={() => setPatientsAndAptTab('appointments')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    patientsAndAptTab === 'appointments' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Appointments ({appointmentsList.length})</span>
+                </button>
+
+                <button
+                  onClick={() => setPatientsAndAptTab('patients')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    patientsAndAptTab === 'patients' ? 'bg-emerald-600 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Patients Directory ({patientsList.length})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* TAB 1: UNIFIED OVERVIEW (SIDE BY SIDE / SPLIT CARDS) */}
+            {patientsAndAptTab === 'unified' && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Appointments Column */}
+                <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/90 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-emerald-600" />
+                      Appointments Schedule
+                    </h3>
+                    <button
+                      onClick={() => setPatientsAndAptTab('appointments')}
+                      className="text-emerald-700 hover:underline font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Full Schedule</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Filter Pills for Appointments inside Unified */}
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200/80 overflow-x-auto">
+                    {(['Today', 'All', 'In-Person', 'Telemedicine'] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setAptFilter(filter)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                          aptFilter === filter ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    {filteredAppointments.map((apt) => (
+                      <div key={apt.id} className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2.5 hover:border-emerald-300 transition-colors shadow-2xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-mono text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 text-xs">
+                              {apt.time}
+                            </span>
+                            <div>
+                              <h4 className="font-bold text-slate-900 text-xs">{apt.patientName}</h4>
+                              <p className="text-slate-500 text-[11px]">{apt.reason}</p>
+                            </div>
+                          </div>
+
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                            apt.status === 'Completed' ? 'bg-emerald-100 text-emerald-800' :
+                            apt.status === 'In-Progress' ? 'bg-amber-100 text-amber-800 animate-pulse' :
+                            'bg-slate-100 text-slate-700'
+                          }`}>
+                            {apt.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+                          <span className="text-slate-500">{apt.mode} ({apt.type})</span>
+                          <button
+                            onClick={() => {
+                              const pat = patientsList.find((p) => p.id === apt.patientId) || patientsList[0];
+                              setSelectedPatient(pat);
+                              setShowConsultationWorkspace(true);
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all cursor-pointer text-[11px] flex items-center gap-1"
+                          >
+                            <span>Start Consult</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Patients Database Column */}
+                <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/90 space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-600" />
+                      Registered Patients Database
+                    </h3>
+                    <button
+                      onClick={() => setPatientsAndAptTab('patients')}
+                      className="text-emerald-700 hover:underline font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>All Records</span>
+                      <ChevronRight className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Status Filters for Patients inside Unified */}
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200/80 overflow-x-auto">
+                    {(['All', 'Active', 'High-Priority', 'Follow-up'] as const).map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => setPatientFilter(st)}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                          patientFilter === st ? 'bg-emerald-600 text-white' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="space-y-3">
+                    {filteredPatients.map((p) => (
+                      <div key={p.id} className="p-3.5 bg-white rounded-xl border border-slate-200 space-y-2 hover:border-emerald-300 transition-colors shadow-2xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 text-xs">{p.fullName}</span>
+                              <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+                                {p.mrn}
+                              </span>
+                            </div>
+                            <p className="text-slate-500 text-[11px] mt-0.5">{p.condition} • {p.age} Yrs ({p.gender})</p>
+                          </div>
+
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                            p.status === 'High-Priority' ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-[11px]">
+                          <button
+                            onClick={() => {
+                              setSelectedPatient(p);
+                              setActiveMenu('Patient Profile (EHR)');
+                            }}
+                            className="text-slate-700 font-bold hover:text-emerald-700 underline cursor-pointer"
+                          >
+                            View EHR Profile
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              setSelectedPatient(p);
+                              setShowConsultationWorkspace(true);
+                            }}
+                            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg transition-all cursor-pointer text-[11px] flex items-center gap-1"
+                          >
+                            <span>Start Consult</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* TAB 2: APPOINTMENTS FULL VIEW */}
+            {patientsAndAptTab === 'appointments' && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Appointments Schedule</h3>
+                    <p className="text-slate-500 text-xs">Chronological queue of patient visits & telemedicine calls</p>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                    {(['All', 'Today', 'Upcoming', 'In-Person', 'Telemedicine'] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setAptFilter(filter)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                          aptFilter === filter ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div className="space-y-3">
-                  {appointmentsList.slice(0, 4).map((apt) => (
-                    <div key={apt.id} className="p-4 bg-slate-50/80 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs hover:bg-slate-100/60 transition-colors">
+                  {filteredAppointments.map((apt) => (
+                    <div key={apt.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-emerald-800 font-bold bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                        <span className="font-mono text-emerald-800 font-bold bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-sm">
                           {apt.time}
                         </span>
                         <div>
-                          <p className="font-bold text-slate-900 text-sm">{apt.patientName}</p>
-                          <p className="text-slate-500 text-[11px]">{apt.reason} • {apt.type}</p>
+                          <h4 className="font-bold text-slate-900 text-sm">{apt.patientName} <span className="text-slate-500 text-xs font-normal">({apt.patientAge} Yrs / {apt.patientGender})</span></h4>
+                          <p className="text-slate-600 text-xs">{apt.reason} • <strong className="text-slate-800">{apt.mode}</strong> ({apt.type})</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                          apt.status === 'Completed' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
-                          apt.status === 'In-Progress' ? 'bg-amber-100 text-amber-800 border border-amber-200 animate-pulse' :
-                          'bg-slate-100 text-slate-700 border border-slate-200'
-                        }`}>
-                          {apt.status}
-                        </span>
+                      <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                        <select
+                          value={apt.status}
+                          onChange={(e) => handleAptStatusChange(apt.id, e.target.value as any)}
+                          className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 outline-none cursor-pointer"
+                        >
+                          <option value="Scheduled">Scheduled</option>
+                          <option value="Waiting">Waiting</option>
+                          <option value="In-Progress">In-Progress</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Cancelled">Cancelled</option>
+                          <option value="No-Show">No-Show</option>
+                        </select>
 
                         <button
                           onClick={() => {
@@ -430,7 +662,78 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
                             setSelectedPatient(pat);
                             setShowConsultationWorkspace(true);
                           }}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-[11px] transition-all cursor-pointer shadow-xs flex items-center gap-1"
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1"
+                        >
+                          <span>Start Consultation</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: PATIENTS FULL DIRECTORY VIEW */}
+            {patientsAndAptTab === 'patients' && (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Registered Patients Database</h3>
+                    <p className="text-slate-500 text-xs">Directory of clinical records under care of {doctor.fullName}</p>
+                  </div>
+                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200">
+                    {(['All', 'Active', 'New', 'Follow-up', 'High-Priority'] as const).map((st) => (
+                      <button
+                        key={st}
+                        onClick={() => setPatientFilter(st)}
+                        className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
+                          patientFilter === st ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="divide-y divide-slate-200/80">
+                  {filteredPatients.map((p) => (
+                    <div key={p.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 text-base">{p.fullName}</span>
+                          <span className="font-mono text-emerald-800 font-bold bg-slate-100 px-2 py-0.5 rounded text-[10px] border border-slate-200">
+                            {p.mrn}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            p.status === 'High-Priority' ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                          }`}>
+                            {p.status}
+                          </span>
+                        </div>
+
+                        <p className="text-slate-600 text-xs">{p.condition} • {p.age} Yrs / {p.gender} • Blood Group: <strong className="text-emerald-700">{p.bloodGroup}</strong></p>
+                        <p className="text-slate-500 text-[11px]">Phone: {p.phone} • Last Visit: {p.lastVisit}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedPatient(p);
+                            setActiveMenu('Patient Profile (EHR)');
+                          }}
+                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-all cursor-pointer border border-slate-300"
+                        >
+                          View EHR Profile
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSelectedPatient(p);
+                            setShowConsultationWorkspace(true);
+                          }}
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1"
                         >
                           <span>Start Consult</span>
                           <ChevronRight className="w-3.5 h-3.5" />
@@ -440,193 +743,10 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
                   ))}
                 </div>
               </div>
-
-              {/* Authenticated Physician Badge Card */}
-              <div className="bg-gradient-to-br from-emerald-800 via-teal-800 to-emerald-900 rounded-2xl p-6 border border-emerald-700 text-white space-y-4 shadow-md">
-                <div className="flex items-center gap-2 text-white text-xs font-bold border-b border-white/20 pb-3">
-                  <ShieldCheck className="w-5 h-5 text-emerald-200" />
-                  <span>Authenticated Physician Profile</span>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  <h4 className="font-bold text-white text-base">{doctor.fullName}</h4>
-                  <p className="text-emerald-100 font-medium">{doctor.post}</p>
-                  <p className="text-emerald-100/80 text-[11px]">{doctor.hospitalAffiliation}</p>
-
-                  <div className="bg-white/10 backdrop-blur-md p-3.5 rounded-xl border border-white/20 space-y-2 text-[11px] font-mono mt-3">
-                    <div className="flex justify-between">
-                      <span className="text-emerald-100">NPI Number:</span>
-                      <strong className="text-white font-bold">{doctor.npiNumber}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-emerald-100">Medical Council #:</span>
-                      <strong className="text-white">{doctor.medicalCouncilNumber}</strong>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-emerald-100">State License #:</span>
-                      <strong className="text-white">{doctor.licenseNumber}</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => setActiveMenu('Profile & Verification')}
-                  className="w-full py-2.5 bg-white hover:bg-emerald-50 text-emerald-900 font-bold rounded-xl text-xs transition-all cursor-pointer shadow-sm text-center block"
-                >
-                  Manage Physician Credential Seals
-                </button>
-              </div>
-
-            </div>
+            )}
           </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* VIEW 2: APPOINTMENTS                                      */}
-        {/* ========================================================= */}
-        {!showConsultationWorkspace && activeMenu === 'Appointments' && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 text-xs shadow-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Appointments Schedule (Chronological Order)</h2>
-                <p className="text-slate-500">Scheduled consultations, telemedicine calls, and in-person patient visits.</p>
-              </div>
-
-              {/* Filter Pills */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                {(['All', 'Today', 'Upcoming', 'In-Person', 'Telemedicine'] as const).map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() => setAptFilter(filter)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                      aptFilter === filter ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {filteredAppointments.map((apt) => (
-                <div key={apt.id} className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-emerald-800 font-bold bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-sm">
-                      {apt.time}
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-sm">{apt.patientName} <span className="text-slate-500 text-xs font-normal">({apt.patientAge} Yrs / {apt.patientGender})</span></h4>
-                      <p className="text-slate-600 text-xs">{apt.reason} • <strong className="text-slate-800">{apt.mode}</strong> ({apt.type})</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
-                    <select
-                      value={apt.status}
-                      onChange={(e) => handleAptStatusChange(apt.id, e.target.value as any)}
-                      className="bg-white border border-slate-200 rounded-xl px-2.5 py-1 text-xs font-bold text-slate-800 outline-none"
-                    >
-                      <option value="Scheduled">Scheduled</option>
-                      <option value="Waiting">Waiting</option>
-                      <option value="In-Progress">In-Progress</option>
-                      <option value="Completed">Completed</option>
-                      <option value="Cancelled">Cancelled</option>
-                      <option value="No-Show">No-Show</option>
-                    </select>
-
-                    <button
-                      onClick={() => {
-                        const pat = patientsList.find((p) => p.id === apt.patientId) || patientsList[0];
-                        setSelectedPatient(pat);
-                        setShowConsultationWorkspace(true);
-                      }}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1"
-                    >
-                      <span>Start Consultation</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ========================================================= */}
-        {/* VIEW 3: PATIENTS DATABASE                                 */}
-        {/* ========================================================= */}
-        {!showConsultationWorkspace && activeMenu === 'Patients' && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 text-xs shadow-xs">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-4">
-              <div>
-                <h2 className="text-base font-bold text-slate-900">Registered Patients Database</h2>
-                <p className="text-slate-500">Directory of all clinical records under care of {doctor.fullName}.</p>
-              </div>
-
-              {/* Status Filters */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
-                {(['All', 'Active', 'New', 'Follow-up', 'High-Priority'] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setPatientFilter(st)}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold cursor-pointer transition-all ${
-                      patientFilter === st ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="divide-y divide-slate-200/80">
-              {filteredPatients.map((p) => (
-                <div key={p.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-slate-900 text-base">{p.fullName}</span>
-                      <span className="font-mono text-emerald-800 font-bold bg-slate-100 px-2 py-0.5 rounded text-[10px] border border-slate-200">
-                        {p.mrn}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                        p.status === 'High-Priority' ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      }`}>
-                        {p.status}
-                      </span>
-                    </div>
-
-                    <p className="text-slate-600 text-xs">{p.condition} • {p.age} Yrs / {p.gender} • Blood Group: <strong className="text-emerald-700">{p.bloodGroup}</strong></p>
-                    <p className="text-slate-500 text-[11px]">Phone: {p.phone} • Last Visit: {p.lastVisit}</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedPatient(p);
-                        setActiveMenu('Patient Profile (EHR)');
-                      }}
-                      className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold rounded-xl text-xs transition-all cursor-pointer border border-slate-300"
-                    >
-                      View EHR Profile
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setSelectedPatient(p);
-                        setShowConsultationWorkspace(true);
-                      }}
-                      className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer shadow-xs flex items-center gap-1"
-                    >
-                      <span>Start Consult</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
+      )}
 
         {/* ========================================================= */}
         {/* VIEW 4: PATIENT PROFILE (EHR)                             */}
@@ -635,6 +755,16 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
           <EhrPatientProfile
             patient={selectedPatient}
             doctor={doctor}
+            allPatients={patientsList}
+            onSelectPatient={(pat) => setSelectedPatient(pat)}
+            onUpdatePatient={(updatedPat) => {
+              setSelectedPatient(updatedPat);
+              setPatientsList((prev) => prev.map((p) => (p.id === updatedPat.id ? updatedPat : p)));
+            }}
+            onAddPatient={(newPat) => {
+              setPatientsList((prev) => [newPat, ...prev]);
+              setSelectedPatient(newPat);
+            }}
             onStartConsultation={(pat) => {
               setSelectedPatient(pat);
               setShowConsultationWorkspace(true);
@@ -745,16 +875,125 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
         )}
 
         {/* ========================================================= */}
-        {/* VIEW 12: MY CLINICS & HOSPITAL                             */}
+        {/* VIEW: PROFESSIONAL PROFILE                                */}
         {/* ========================================================= */}
-        {!showConsultationWorkspace && activeMenu === 'My Clinics & Hospital' && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 text-xs shadow-xs">
-            <h2 className="text-base font-bold text-slate-900 border-b border-slate-200/80 pb-3">Hospital & Clinic Affiliations</h2>
-            <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
-              <strong className="text-slate-900 text-sm block">{doctor.hospitalAffiliation}</strong>
-              <p className="text-slate-600">Department: {doctor.speciality} • OPD Room 402</p>
-              <p className="text-emerald-800 font-mono font-bold">Consultation Slot: 09:00 AM - 04:00 PM</p>
+        {!showConsultationWorkspace && activeMenu === 'Professional Profile' && (
+          <div className="space-y-6">
+            
+            {/* Authenticated Physician Banner */}
+            <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 rounded-2xl p-6 border border-emerald-700 text-white shadow-md space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-white/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-white/10 rounded-xl border border-white/20 backdrop-blur-md">
+                    <ShieldCheck className="w-8 h-8 text-emerald-200" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-semibold text-emerald-100 uppercase tracking-wider block">
+                      Authentic Physician Credentials
+                    </span>
+                    <h2 className="text-xl font-bold text-white">{doctor.fullName}</h2>
+                  </div>
+                </div>
+
+                <span className="bg-white text-emerald-900 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
+                  STATUS: {doctor.status} ({doctor.confidenceScore}% Match)
+                </span>
+              </div>
+
+              <p className="text-xs text-emerald-100/90">
+                {doctor.aiAuditSummary}
+              </p>
             </div>
+
+            {/* Verified Physician Metadata & Registrations */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-6 shadow-xs">
+              <h3 className="font-bold text-slate-900 text-base border-b border-slate-200/80 pb-3 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-emerald-600" />
+                Verified Physician Metadata & Registrations
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">Full Name</span>
+                  <strong className="text-slate-900 text-sm block">{doctor.fullName}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">Post / Designation</span>
+                  <strong className="text-emerald-700 text-sm block">{doctor.post}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">NPI Number (10 Digits)</span>
+                  <strong className="text-slate-900 font-mono text-sm block">{doctor.npiNumber}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">Medical Council Number</span>
+                  <strong className="text-slate-900 font-mono text-sm block">{doctor.medicalCouncilNumber}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">State / National License Number</span>
+                  <strong className="text-slate-900 font-mono text-sm block">{doctor.licenseNumber}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">Medical Speciality</span>
+                  <strong className="text-slate-900 text-sm block">{doctor.speciality}</strong>
+                </div>
+
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-slate-500 block font-medium">Verification Badge ID</span>
+                  <strong className="text-emerald-700 font-mono text-sm block">{doctor.verificationBadgeId}</strong>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-slate-200/80 flex flex-wrap gap-3">
+                <button
+                  onClick={handleCopyBadge}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 flex items-center gap-2 transition-all cursor-pointer"
+                >
+                  {copiedBadge ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedBadge ? 'Badge ID Copied' : 'Copy Verification Badge ID'}</span>
+                </button>
+
+                <button
+                  onClick={handleCopyToken}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+                >
+                  {copiedToken ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedToken ? 'Token Copied' : 'Copy Integration Token'}</span>
+                </button>
+              </div>
+
+            </div>
+
+            {/* Hospital & Clinic Affiliations */}
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 text-xs shadow-xs">
+              <h3 className="font-bold text-slate-900 text-base border-b border-slate-200/80 pb-3 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-emerald-600" />
+                Hospital & Clinic Affiliations
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Primary Hospital Affiliation</span>
+                  <strong className="text-slate-900 text-sm block">{doctor.hospitalAffiliation}</strong>
+                  <p className="text-slate-600">Department: {doctor.speciality} • OPD Room 402</p>
+                  <p className="text-emerald-800 font-mono font-bold">Consultation Hours: 09:00 AM - 04:00 PM</p>
+                </div>
+
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wide">Secondary Telemedicine Clinic</span>
+                  <strong className="text-slate-900 text-sm block">Virtual Cardiology Specialist Wing</strong>
+                  <p className="text-slate-600">Encrypted Tele-consultation Suite</p>
+                  <p className="text-emerald-800 font-mono font-bold">On-Call Slot: 04:00 PM - 07:00 PM</p>
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -824,106 +1063,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
           </div>
         )}
 
-        {/* ========================================================= */}
-        {/* VIEW 16: PROFILE & VERIFICATION                           */}
-        {/* ========================================================= */}
-        {!showConsultationWorkspace && activeMenu === 'Profile & Verification' && (
-          <div className="space-y-6">
-            
-            <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-900 rounded-2xl p-6 border border-emerald-700 text-white shadow-md space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-white/20">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white/10 rounded-xl border border-white/20 backdrop-blur-md">
-                    <ShieldCheck className="w-8 h-8 text-emerald-200" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-emerald-100 uppercase tracking-wider block">
-                      Authentic Physician Credentials
-                    </span>
-                    <h2 className="text-xl font-bold text-white">{doctor.fullName}</h2>
-                  </div>
-                </div>
 
-                <span className="bg-white text-emerald-900 text-xs px-3 py-1 rounded-full font-bold shadow-xs">
-                  STATUS: {doctor.status} ({doctor.confidenceScore}% Match)
-                </span>
-              </div>
-
-              <p className="text-xs text-emerald-100/90">
-                {doctor.aiAuditSummary}
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-6 shadow-xs">
-              <h3 className="font-bold text-slate-900 text-base border-b border-slate-200/80 pb-3 flex items-center gap-2">
-                <UserCheck className="w-5 h-5 text-emerald-600" />
-                Verified Physician Metadata & Registrations
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">Full Name</span>
-                  <strong className="text-slate-900 text-sm block">{doctor.fullName}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">Post / Designation</span>
-                  <strong className="text-emerald-700 text-sm block">{doctor.post}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">NPI Number (10 Digits)</span>
-                  <strong className="text-slate-900 font-mono text-sm block">{doctor.npiNumber}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">Medical Council Number</span>
-                  <strong className="text-slate-900 font-mono text-sm block">{doctor.medicalCouncilNumber}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">State / National License Number</span>
-                  <strong className="text-slate-900 font-mono text-sm block">{doctor.licenseNumber}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">Medical Speciality</span>
-                  <strong className="text-slate-900 text-sm block">{doctor.speciality}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1 sm:col-span-2">
-                  <span className="text-slate-500 block font-medium">Hospital / Medical Centre Affiliation</span>
-                  <strong className="text-slate-900 text-sm block">{doctor.hospitalAffiliation}</strong>
-                </div>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-1">
-                  <span className="text-slate-500 block font-medium">Verification Badge ID</span>
-                  <strong className="text-emerald-700 font-mono text-sm block">{doctor.verificationBadgeId}</strong>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-slate-200/80 flex flex-wrap gap-3">
-                <button
-                  onClick={handleCopyBadge}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold border border-slate-300 flex items-center gap-2 transition-all cursor-pointer"
-                >
-                  {copiedBadge ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedBadge ? 'Badge ID Copied' : 'Copy Verification Badge ID'}</span>
-                </button>
-
-                <button
-                  onClick={handleCopyToken}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs"
-                >
-                  {copiedToken ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4" />}
-                  <span>{copiedToken ? 'Token Copied' : 'Copy Integration Token'}</span>
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
 
         {/* ========================================================= */}
         {/* VIEW 17: NOTIFICATIONS                                    */}
@@ -946,14 +1086,58 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
         {/* VIEW 18: SECURITY & AUDIT LOGS                           */}
         {/* ========================================================= */}
         {!showConsultationWorkspace && activeMenu === 'Security & Audit Logs' && (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 text-xs shadow-xs">
-            <div className="border-b border-slate-200/80 pb-3">
-              <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                <Lock className="w-5 h-5 text-emerald-600" />
-                Security Access & Audit Logs
-              </h2>
-              <p className="text-slate-500">Track who accessed patient medical records and when according to HIPAA compliance rules.</p>
+          <div className="space-y-6">
+            {/* Doctor Password & Privacy Management Card */}
+            <div className="bg-slate-900 text-white rounded-2xl p-6 border border-slate-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block mb-0.5">
+                      Doctor Privacy Protection
+                    </span>
+                    <h3 className="text-base font-bold text-white">
+                      Active Doctor Security Password & PIN
+                    </h3>
+                  </div>
+                </div>
+                <span className="bg-emerald-950 text-emerald-300 text-xs px-3 py-1 rounded-full font-mono border border-emerald-800 font-bold">
+                  HIPAA ENCRYPTED
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-1">
+                  <span className="text-slate-400 block font-medium">Logged-in Doctor</span>
+                  <strong className="text-white text-sm block">{doctor.fullName}</strong>
+                </div>
+
+                <div className="bg-slate-800/80 p-4 rounded-xl border border-slate-700/80 space-y-1">
+                  <span className="text-slate-400 block font-medium">Security Password / PIN</span>
+                  <strong className="text-emerald-400 font-mono text-sm block tracking-wider">
+                    {doctor.securityPassword || 'doc123'}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-800/50 rounded-xl border border-slate-700 text-slate-300 text-xs flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>
+                  Every login attempt verifies doctor identity against this password before displaying patient records, consultation notes, e-prescriptions, and lab reports.
+                </span>
+              </div>
             </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-200/90 space-y-4 text-xs shadow-xs">
+              <div className="border-b border-slate-200/80 pb-3">
+                <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-emerald-600" />
+                  Security Access & Audit Logs
+                </h2>
+                <p className="text-slate-500">Track who accessed patient medical records and when according to HIPAA compliance rules.</p>
+              </div>
 
             <div className="border border-slate-200 rounded-xl overflow-hidden font-mono text-[11px]">
               <table className="w-full text-left">
@@ -980,6 +1164,7 @@ export const ProfessionalDashboard: React.FC<ProfessionalDashboardProps> = ({
               </table>
             </div>
           </div>
+        </div>
         )}
 
         {/* ========================================================= */}
